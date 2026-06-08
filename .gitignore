@@ -1,0 +1,7 @@
+# Rust target directory
+rust-wasm/target/
+
+# IDE files
+.idea/
+.vscode/
+.gemini/

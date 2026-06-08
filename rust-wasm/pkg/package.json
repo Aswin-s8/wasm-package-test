@@ -1,0 +1,15 @@
+{
+  "name": "car_rental_wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "car_rental_wasm_bg.wasm",
+    "car_rental_wasm.js",
+    "car_rental_wasm.d.ts"
+  ],
+  "main": "car_rental_wasm.js",
+  "types": "car_rental_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

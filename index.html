@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ApexDrive - Premium Renting Platform with Real-Time Eigenstate Customization">
+  <title>ApexDrive · Custom Real-Time Car Rentals</title>
+  
+  <!-- Premium Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ── CORE DESIGN SYSTEM ── */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Base Theme Colors */
+      --bg: #060913;
+      --bg-card: rgba(15, 22, 42, 0.45);
+      --bg-card-solid: #0d1326;
+      --bg-drawer: #090e1c;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      
+      --text: #f8fafc;
+      --text-mid: #94a3b8;
+      --text-dim: #475569;
+      --shadow: rgba(0, 0, 0, 0.6);
+      
+      /* Syntaxes for YAML Code Block */
+      --k-key: #60a5fa;
+      --k-val: #fb923c;
+      --k-cmt: #64748b;
+      --k-leaf: #34d399;
+      --k-tmpl: #c084fc;
+
+      /* Active Eigenstate Variables (Updated dynamically by JS) */
+      --brand-accent: #22d3ee;
+      --brand-accent-rgb: 34, 211, 238;
+      --glow-strength: 15px;
+      --card-blur: 12px;
+      --border-radius: 12px;
+      --grid-opacity: 0.15;
+      --page-font: 'Syne', system-ui, sans-serif;
+    }
+
+    body {
+      font-family: var(--page-font);
+      background-color: var(--bg);
+      background-image: radial-gradient(circle at 50% -20%, rgba(var(--brand-accent-rgb), 0.15) 0%, transparent 60%);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-hover);
+      border-radius: 99px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--brand-accent);
+    }
+
+    /* ── TRANSITIONS ── */
+    h1, h2, h3, p, a, button, input, select, .hero, .card, .glass-panel {
+      transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease, border-radius 0.4s ease, backdrop-filter 0.4s ease;
+    }
+
+    /* ── UTILITIES & PATTERNS ── */
+    .glow-text {
+      text-shadow: 0 0 var(--glow-strength) rgba(var(--brand-accent-rgb), 0.4);
+    }
+    
+    .glow-border:hover {
+      border-color: var(--brand-accent);
+      box-shadow: 0 0 var(--glow-strength) rgba(var(--brand-accent-rgb), 0.15);
+    }
+
+    .accent-bg {
+      background-color: var(--brand-accent);
+      color: #060913;
+    }
+
+    .accent-text {
+      color: var(--brand-accent);
+    }
+
+    /* Background Ambient Dashboard Grid */
+    .dashboard-grid {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      opacity: var(--grid-opacity);
+      z-index: 0;
+    }
+
+    /* ── HEADER NAVIGATION ── */
+    header {
+      width: 100%;
+      height: 75px;
+      padding: 0 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6, 9, 19, 0.7);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      cursor: pointer;
+    }
+
+    .logo-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--brand-accent);
+      box-shadow: 0 0 10px var(--brand-accent);
+      display: inline-block;
+    }
+
+    nav {
+      display: flex;
+      gap: 2.5rem;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: var(--text-mid);
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    nav a:hover, nav a.active {
+      color: var(--brand-accent);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .btn-edit-eigen {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      color: var(--brand-accent);
+      background: rgba(var(--brand-accent-rgb), 0.08);
+      border: 1px solid var(--brand-accent);
+      padding: 0.5rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-edit-eigen:hover {
+      background: var(--brand-accent);
+      color: #060913;
+      box-shadow: 0 0 var(--glow-strength) rgba(var(--brand-accent-rgb), 0.4);
+    }
+
+    /* ── HERO SECTION ── */
+    .hero {
+      position: relative;
+      padding: 6.5rem 4rem 5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .hero-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--brand-accent);
+      background: rgba(var(--brand-accent-rgb), 0.08);
+      border: 1px solid rgba(var(--brand-accent-rgb), 0.2);
+      padding: 0.3rem 1rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      max-width: 900px;
+      margin-bottom: 1.5rem;
+      z-index: 1;
+    }
+
+    .hero p {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-mid);
+      max-width: 650px;
+      margin-bottom: 2.5rem;
+      z-index: 1;
+    }
+
+    /* Search Widget */
+    .search-widget {
+      width: 100%;
+      max-width: 950px;
+      background: var(--bg-card);
+      backdrop-filter: blur(var(--card-blur));
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius);
+      padding: 1.8rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr) auto;
+      gap: 1.2rem;
+      text-align: left;
+      box-shadow: 0 10px 40px var(--shadow);
+      z-index: 1;
+    }
+
+    .search-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .search-group label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+    }
+
+    .search-group input, .search-group select {
+      background: rgba(6, 9, 19, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.8rem;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      font-size: 0.88rem;
+    }
+
+    .search-group input:focus, .search-group select:focus {
+      border-color: var(--brand-accent);
+      box-shadow: 0 0 10px rgba(var(--brand-accent-rgb), 0.2);
+    }
+
+    .btn-search {
+      align-self: flex-end;
+      height: 48px;
+      background: var(--brand-accent);
+      color: #060913;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 15px rgba(var(--brand-accent-rgb), 0.3);
+    }
+
+    .btn-search:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(var(--brand-accent-rgb), 0.5);
+      filter: brightness(1.1);
+    }
+
+    /* ── FLEET SECTION ── */
+    .section-container {
+      padding: 6rem 4rem;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      margin-bottom: 3.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+
+    .section-header-left h2 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-header-left p {
+      color: var(--text-mid);
+      font-size: 1rem;
+    }
+
+    .vector-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      border: 1px dashed var(--text-dim);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+    }
+
+    /* Fleet Cards Grid */
+    .fleet-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2.5rem;
+    }
+
+    .car-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(var(--card-blur));
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .car-card:hover {
+      border-color: var(--brand-accent);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(var(--brand-accent-rgb), 0.05);
+    }
+
+    .car-image-container {
+      width: 100%;
+      height: 230px;
+      overflow: hidden;
+      position: relative;
+      background: #090e1c;
+    }
+
+    .car-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .car-card:hover .car-image {
+      transform: scale(1.05);
+    }
+
+    .car-badge {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: rgba(6, 9, 19, 0.85);
+      border: 1px solid var(--brand-accent);
+      color: var(--brand-accent);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.25rem 0.65rem;
+      border-radius: 4px;
+      z-index: 2;
+    }
+
+    .car-content {
+      padding: 1.8rem;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    .car-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.6rem;
+    }
+
+    .car-name {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .car-price {
+      text-align: right;
+    }
+
+    .car-price-amount {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--brand-accent);
+    }
+
+    .car-price-unit {
+      font-size: 0.72rem;
+      color: var(--text-mid);
+      display: block;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .car-specs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+      margin: 1.2rem 0;
+    }
+
+    .spec-item {
+      text-align: center;
+    }
+
+    .spec-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .spec-value {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-mid);
+    }
+
+    .btn-rent {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border-hover);
+      color: var(--text);
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.8rem 0;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: auto;
+    }
+
+    .btn-rent:hover {
+      background: var(--brand-accent);
+      border-color: var(--brand-accent);
+      color: #060913;
+      box-shadow: 0 4px 15px rgba(var(--brand-accent-rgb), 0.25);
+    }
+
+    /* ── BRAND VALUES / EXPERIENCE ── */
+    .experience-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .exp-card {
+      background: rgba(15, 22, 42, 0.25);
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius);
+      padding: 2.2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .exp-card::after {
+      content: '';
+      position: absolute;
+      top: -30%;
+      right: -30%;
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, rgba(var(--brand-accent-rgb), 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .exp-icon {
+      font-size: 2rem;
+      margin-bottom: 1.2rem;
+      display: inline-block;
+    }
+
+    .exp-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: var(--text);
+    }
+
+    .exp-desc {
+      font-size: 0.88rem;
+      color: var(--text-mid);
+      line-height: 1.7;
+    }
+
+    /* ── EIGENSTATE CUSTOMIZER DRAWER ── */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .drawer-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 580px;
+      background: var(--bg-drawer);
+      border-left: 1px solid var(--border);
+      z-index: 101;
+      box-shadow: -10px 0 40px var(--shadow);
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      max-width: 100vw;
+    }
+
+    .drawer.active {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 1.8rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .drawer-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .drawer-title::before {
+      content: '◆';
+      color: var(--brand-accent);
+      font-size: 0.8rem;
+    }
+
+    .btn-close-drawer {
+      background: transparent;
+      border: none;
+      color: var(--text-mid);
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+
+    .btn-close-drawer:hover {
+      color: var(--text);
+    }
+
+    .drawer-content {
+      padding: 1.8rem;
+      overflow-y: auto;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Preset Container */
+    .preset-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .preset-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .presets-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-preset-card {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text-mid);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.7rem;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .btn-preset-card:hover {
+      border-color: var(--brand-accent);
+      color: var(--brand-accent);
+    }
+
+    .btn-preset-card.active {
+      background: rgba(var(--brand-accent-rgb), 0.06);
+      border-color: var(--brand-accent);
+      color: var(--brand-accent);
+      box-shadow: 0 0 10px rgba(var(--brand-accent-rgb), 0.1);
+    }
+
+    /* Collapsible Vector Cards */
+    .vector-section {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.01);
+      overflow: hidden;
+    }
+
+    .vector-section-header {
+      padding: 1rem 1.2rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .vector-section-header h3 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: var(--text);
+    }
+
+    .vector-section-header.active h3 {
+      color: var(--brand-accent);
+    }
+
+    .vector-arrow {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      transition: transform 0.3s ease;
+    }
+
+    .vector-section-header.active .vector-arrow {
+      transform: rotate(90deg);
+      color: var(--brand-accent);
+    }
+
+    .vector-section-body {
+      padding: 1.4rem;
+      display: none;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .vector-section-body.active {
+      display: flex;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-field label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      color: var(--text-mid);
+    }
+
+    .form-input {
+      background: rgba(6, 9, 19, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.6rem 0.8rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.82rem;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--brand-accent);
+      box-shadow: 0 0 8px rgba(var(--brand-accent-rgb), 0.25);
+    }
+
+    /* Accent Custom Selector */
+    .color-picker-row {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .color-swatches {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    .swatch.active {
+      border-color: #f8fafc;
+      transform: scale(1.1);
+    }
+
+    .color-input-picker {
+      background: transparent;
+      border: none;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    /* Slider styling */
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .slider-input {
+      flex-grow: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border-hover);
+      outline: none;
+      cursor: pointer;
+      accent-color: var(--brand-accent);
+    }
+
+    .slider-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-mid);
+      width: 40px;
+      text-align: right;
+    }
+
+    /* Live YAML representation block */
+    .yaml-container {
+      margin-top: 1rem;
+    }
+
+    .yaml-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    pre {
+      background: #04060c;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem;
+      overflow-x: auto;
+      font-size: 0.74rem;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .k-cmt { color: var(--k-cmt); font-style: italic; }
+    .k-key { color: var(--k-key); }
+    .k-val { color: var(--k-val); }
+    .k-leaf { color: var(--k-leaf); }
+    .k-tmpl { color: var(--k-tmpl); }
+
+    /* ── BOOKING MODAL CHECKOUT ── */
+    .checkout-drawer {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translate(-50%, 100%);
+      width: 100%;
+      max-width: 650px;
+      background: var(--bg-card-solid);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -10px 45px var(--shadow);
+      z-index: 90;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 2.2rem;
+    }
+
+    .checkout-drawer.active {
+      transform: translate(-50%, 0);
+    }
+
+    .checkout-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.4rem;
+    }
+
+    .checkout-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+
+    .checkout-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-mid);
+      margin-top: 0.2rem;
+    }
+
+    .btn-close-checkout {
+      background: transparent;
+      border: none;
+      color: var(--text-mid);
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .checkout-details-panel {
+      background: rgba(6, 9, 19, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem;
+      font-size: 0.88rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .checkout-detail-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .checkout-detail-row .lbl {
+      color: var(--text-dim);
+    }
+
+    .checkout-detail-row .val {
+      color: var(--text-mid);
+      font-weight: 500;
+    }
+
+    .checkout-summary-panel {
+      background: rgba(var(--brand-accent-rgb), 0.04);
+      border: 1px solid rgba(var(--brand-accent-rgb), 0.15);
+      border-radius: 8px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .checkout-total-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--brand-accent);
+      margin-bottom: 0.2rem;
+    }
+
+    .checkout-total-price {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .btn-confirm-booking {
+      width: 100%;
+      height: 48px;
+      background: var(--brand-accent);
+      color: #060913;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.95rem;
+      margin-top: 1rem;
+      box-shadow: 0 4px 15px rgba(var(--brand-accent-rgb), 0.25);
+    }
+
+    .btn-confirm-booking:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 6px 20px rgba(var(--brand-accent-rgb), 0.4);
+    }
+
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 2rem;
+      left: 50%;
+      transform: translate(-50%, -150%);
+      background: var(--bg-card-solid);
+      border: 1px solid var(--brand-accent);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(var(--brand-accent-rgb), 0.2);
+      border-radius: 8px;
+      padding: 1rem 2rem;
+      z-index: 200;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .notification.active {
+      transform: translate(-50%, 0);
+    }
+
+    .notification-icon {
+      color: var(--brand-accent);
+      font-size: 1.2rem;
+    }
+
+    .notification-text {
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      width: 100%;
+      padding: 3rem 4rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
+
+    footer a {
+      color: var(--text-dim);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--brand-accent);
+    }
+
+    /* ── RESPONSIVE DESIGN ── */
+    @media (max-width: 950px) {
+      header {
+        padding: 0 2rem;
+      }
+      .section-container {
+        padding: 4rem 2rem;
+      }
+      .search-widget {
+        grid-template-columns: 1fr;
+        padding: 1.2rem;
+      }
+      .btn-search {
+        width: 100%;
+      }
+      .checkout-grid {
+        grid-template-columns: 1fr;
+        gap: 1.2rem;
+      }
+      footer {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
+        padding: 2.5rem 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Ambient Grid -->
+  <div class="dashboard-grid" id="bg-grid"></div>
+
+  <!-- Header Navigation -->
+  <header>
+    <div class="logo-container" onclick="scrollToTop()">
+      <span class="logo-dot"></span>
+      <span id="logo-text">VoltDrive</span>
+    </div>
+    <nav id="nav-links">
+      <a href="#fleet" class="active" id="nav-item-1">Fleet</a>
+      <a href="#experiences" id="nav-item-2">Experiences</a>
+      <a href="#about" id="nav-item-3">About</a>
+    </nav>
+    <div class="header-actions">
+      <button class="btn-edit-eigen" onclick="toggleDrawer(true)">
+        <span>Edit Eigenstate</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="hero">
+    <div class="hero-tag" id="hero-tagline">Electrified Performance Rentals</div>
+    <h1 id="hero-title" class="glow-text">Experience the Future of Speed</h1>
+    <p id="hero-subtitle">Rent state-of-the-art electric hypercars with instantaneous torque and track-ready handling.</p>
+    
+    <!-- Reservation Search Widget -->
+    <form class="search-widget" id="search-form" onsubmit="onSearch(event)">
+      <div class="search-group">
+        <label for="pickup-loc" id="lbl-search-loc">Location</label>
+        <select id="pickup-loc" required>
+          <option value="Los Angeles">Los Angeles Airport (LAX)</option>
+          <option value="Monaco">Monaco Monte Carlo</option>
+          <option value="Miami">Miami Beach Marina</option>
+          <option value="Munich">Munich Autobahn Hub</option>
+        </select>
+      </div>
+      <div class="search-group">
+        <label for="start-date" id="lbl-search-start">Start Date</label>
+        <input type="date" id="start-date" required>
+      </div>
+      <div class="search-group">
+        <label for="end-date" id="lbl-search-end">End Date</label>
+        <input type="date" id="end-date" required>
+      </div>
+      <button type="submit" class="btn-search">
+        <span id="hero-cta">Reserve a Volt</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+    </form>
+  </main>
+
+  <!-- Fleet Section -->
+  <section class="section-container" id="fleet">
+    <div class="section-header">
+      <div class="section-header-left">
+        <h2>Featured Fleet</h2>
+        <p>Dynamic Eigenvector State Components (a₃·A₃)</p>
+      </div>
+      <div class="vector-tag">Vector A₃: Fleet Array State</div>
+    </div>
+
+    <div class="fleet-grid">
+      <!-- Car 1 Card -->
+      <article class="car-card" id="car-card-1">
+        <span class="car-badge" id="car-cat-1">Electric</span>
+        <div class="car-image-container">
+          <img src="" alt="Aether EV" class="car-image" id="car-img-1">
+        </div>
+        <div class="car-content">
+          <div class="car-title-row">
+            <h3 class="car-name" id="car-name-1">Aether EV Hypercar</h3>
+            <div class="car-price">
+              <span class="car-price-amount" id="car-price-1">$750</span>
+              <span class="car-price-unit">/ Day</span>
+            </div>
+          </div>
+          <div class="car-specs">
+            <div class="spec-item">
+              <span class="spec-label">0-60 MPH</span>
+              <span class="spec-value" id="car-060-1">1.85s</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Top Speed</span>
+              <span class="spec-value" id="car-top-1">258mph</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Power</span>
+              <span class="spec-value" id="car-hp-1">1900 HP</span>
+            </div>
+          </div>
+          <button class="btn-rent" onclick="openCheckout(0)">
+            <span>Rent Now</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </article>
+
+      <!-- Car 2 Card -->
+      <article class="car-card" id="car-card-2">
+        <span class="car-badge" id="car-cat-2">Electric</span>
+        <div class="car-image-container">
+          <img src="" alt="Neuron Roadster" class="car-image" id="car-img-2">
+        </div>
+        <div class="car-content">
+          <div class="car-title-row">
+            <h3 class="car-name" id="car-name-2">Neuron Roadster</h3>
+            <div class="car-price">
+              <span class="car-price-amount" id="car-price-2">$550</span>
+              <span class="car-price-unit">/ Day</span>
+            </div>
+          </div>
+          <div class="car-specs">
+            <div class="spec-item">
+              <span class="spec-label">0-60 MPH</span>
+              <span class="spec-value" id="car-060-2">1.99s</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Top Speed</span>
+              <span class="spec-value" id="car-top-2">250mph</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Power</span>
+              <span class="spec-value" id="car-hp-2">1200 HP</span>
+            </div>
+          </div>
+          <button class="btn-rent" onclick="openCheckout(1)">
+            <span>Rent Now</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </article>
+
+      <!-- Car 3 Card -->
+      <article class="car-card" id="car-card-3">
+        <span class="car-badge" id="car-cat-3">EV Sedan</span>
+        <div class="car-image-container">
+          <img src="" alt="Volt-X Sportback" class="car-image" id="car-img-3">
+        </div>
+        <div class="car-content">
+          <div class="car-title-row">
+            <h3 class="car-name" id="car-name-3">Volt-X Sportback</h3>
+            <div class="car-price">
+              <span class="car-price-amount" id="car-price-3">$400</span>
+              <span class="car-price-unit">/ Day</span>
+            </div>
+          </div>
+          <div class="car-specs">
+            <div class="spec-item">
+              <span class="spec-label">0-60 MPH</span>
+              <span class="spec-value" id="car-060-3">3.1s</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Top Speed</span>
+              <span class="spec-value" id="car-top-3">180mph</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Power</span>
+              <span class="spec-value" id="car-hp-3">750 HP</span>
+            </div>
+          </div>
+          <button class="btn-rent" onclick="openCheckout(2)">
+            <span>Rent Now</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Experience / Brand Value Props -->
+  <section class="section-container" id="experiences" style="border-top: 1px solid var(--border)">
+    <div class="section-header">
+      <div class="section-header-left">
+        <h2>The Apex Experience</h2>
+        <p>Premium infrastructure and client-first delivery</p>
+      </div>
+      <div class="vector-tag">Vector A₅: Brand Logistics</div>
+    </div>
+    
+    <div class="experience-grid">
+      <!-- Card 1 -->
+      <div class="exp-card">
+        <span class="exp-icon" id="exp-icon-1">📍</span>
+        <h3 class="exp-title" id="exp-title-1">On-Demand Delivery</h3>
+        <p class="exp-desc" id="exp-desc-1">Your selected hypercar will be flatbed-delivered directly to your airport terminal, villa, or residence, freshly detailed and charged/fueled.</p>
+      </div>
+      <!-- Card 2 -->
+      <div class="exp-card">
+        <span class="exp-icon" id="exp-icon-2">🛡️</span>
+        <h3 class="exp-title" id="exp-title-2">Bespoke Protection</h3>
+        <p class="exp-desc" id="exp-desc-2">Every lease incorporates complete premium loss-damage waiver, dynamic roadside telemetry assistance, and pre-negotiated premium track insurance options.</p>
+      </div>
+      <!-- Card 3 -->
+      <div class="exp-card">
+        <span class="exp-icon" id="exp-icon-3">🦾</span>
+        <h3 class="exp-title" id="exp-title-3">WASM Telemetry</h3>
+        <p class="exp-desc" id="exp-desc-3">Connect directly to real-time track telemetry via decentralized dashboard nodes, letting you analyze torque distribution and lap speeds live.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <span id="footer-logo">VoltDrive · Exotic & Performance Car Rentals</span>
+    <span>Eigenstate System · a₁·A₁ + a₂·A₂ + a₃·A₃ + a₄·A₄ + a₅·A₅</span>
+    <span><a href="#" onclick="event.preventDefault(); toggleDrawer(true)">Open Eigenstate Editor</a></span>
+  </footer>
+
+  <!-- ── EIGENSTATE CUSTOMIZER DRAWER ── -->
+  <div class="drawer-overlay" id="drawer-overlay" onclick="toggleDrawer(false)"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div class="drawer-title">Eigenstate Configuration</div>
+      <button class="btn-close-drawer" onclick="toggleDrawer(false)">✕</button>
+    </div>
+    
+    <div class="drawer-content">
+      
+      <!-- Preset Swapping Selection -->
+      <div class="preset-group">
+        <span class="preset-label">Active Presets</span>
+        <div class="presets-row">
+          <button class="btn-preset-card active" id="btn-pre-cyber" onclick="loadPreset('cyber')">Cyber Horizon</button>
+          <button class="btn-preset-card" id="btn-pre-monaco" onclick="loadPreset('monaco')">Monaco GT</button>
+          <button class="btn-preset-card" id="btn-pre-stealth" onclick="loadPreset('stealth')">Stealth Track</button>
+          <button class="btn-preset-card" id="btn-pre-custom" style="display: none; border-style: dashed;" disabled>Custom State</button>
+        </div>
+      </div>
+
+      <!-- Vector Sections Accordion -->
+      <div class="vector-accordion">
+        
+        <!-- A1 Vector Section -->
+        <div class="vector-section">
+          <div class="vector-section-header active" onclick="toggleAccordion(this)">
+            <h3>a₁·A₁: Brand Identity Vector</h3>
+            <span class="vector-arrow">▶</span>
+          </div>
+          <div class="vector-section-body active">
+            <div class="form-field">
+              <label for="fld-brand-name">Brand Name</label>
+              <input type="text" id="fld-brand-name" class="form-input" oninput="onFieldInput()">
+            </div>
+            <div class="form-field">
+              <label for="fld-brand-tag">Brand Tagline</label>
+              <input type="text" id="fld-brand-tag" class="form-input" oninput="onFieldInput()">
+            </div>
+            <div class="form-field" style="border-top: 1px dashed var(--border); padding-top: 0.8rem; margin-top: 0.2rem;">
+              <label style="color:var(--brand-accent);">Nav Menu Links (3 Items)</label>
+              <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem;">
+                <input type="text" id="fld-nav-1" class="form-input" style="flex:1" placeholder="Link 1" oninput="onFieldInput()">
+                <input type="text" id="fld-nav-2" class="form-input" style="flex:1" placeholder="Link 2" oninput="onFieldInput()">
+                <input type="text" id="fld-nav-3" class="form-input" style="flex:1" placeholder="Link 3" oninput="onFieldInput()">
+              </div>
+            </div>
+            <div class="form-field" style="border-top: 1px dashed var(--border); padding-top: 0.8rem;">
+              <label>Primary Accent Theme</label>
+              <div class="color-picker-row">
+                <div class="color-swatches">
+                  <div class="swatch" style="background:#22d3ee" onclick="setAccentColor('#22d3ee')"></div>
+                  <div class="swatch" style="background:#10b981" onclick="setAccentColor('#10b981')"></div>
+                  <div class="swatch" style="background:#f43f5e" onclick="setAccentColor('#f43f5e')"></div>
+                  <div class="swatch" style="background:#f59e0b" onclick="setAccentColor('#f59e0b')"></div>
+                  <div class="swatch" style="background:#a78bfa" onclick="setAccentColor('#a78bfa')"></div>
+                </div>
+                <input type="color" id="fld-brand-color" class="color-input-picker" oninput="setAccentColor(this.value)">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A2 Vector Section -->
+        <div class="vector-section" style="margin-top: 1rem;">
+          <div class="vector-section-header" onclick="toggleAccordion(this)">
+            <h3>a₂·A₂: Hero Layout Vector</h3>
+            <span class="vector-arrow">▶</span>
+          </div>
+          <div class="vector-section-body">
+            <div class="form-field">
+              <label for="fld-hero-title">Hero Main Title</label>
+              <input type="text" id="fld-hero-title" class="form-input" oninput="onFieldInput()">
+            </div>
+            <div class="form-field">
+              <label for="fld-hero-sub">Hero Subtitle</label>
+              <textarea id="fld-hero-sub" class="form-input" rows="2" style="resize: vertical;" oninput="onFieldInput()"></textarea>
+            </div>
+            <div class="form-field">
+              <label for="fld-hero-cta">CTA Button Label</label>
+              <input type="text" id="fld-hero-cta" class="form-input" oninput="onFieldInput()">
+            </div>
+            <div class="form-field" style="border-top: 1px dashed var(--border); padding-top: 0.8rem; margin-top: 0.2rem;">
+              <label style="color:var(--brand-accent);">Booking Fields Labels</label>
+              <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem;">
+                <input type="text" id="fld-lbl-loc" class="form-input" style="flex:1" placeholder="Location Label" oninput="onFieldInput()">
+                <input type="text" id="fld-lbl-start" class="form-input" style="flex:1" placeholder="Start Label" oninput="onFieldInput()">
+                <input type="text" id="fld-lbl-end" class="form-input" style="flex:1" placeholder="End Label" oninput="onFieldInput()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A3 Vector Section -->
+        <div class="vector-section" style="margin-top: 1rem;">
+          <div class="vector-section-header" onclick="toggleAccordion(this)">
+            <h3>a₃·A₃: Fleet Array Vector</h3>
+            <span class="vector-arrow">▶</span>
+          </div>
+          <div class="vector-section-body">
+            <!-- Car 1 Controls -->
+            <div class="form-field" style="border-bottom: 1px dashed var(--border); padding-bottom: 1rem;">
+              <h4 style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--brand-accent); margin-bottom: 0.5rem;">VEHICLE 01</h4>
+              <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                <div style="flex:2" class="form-field">
+                  <label for="fld-car1-name">Car Name</label>
+                  <input type="text" id="fld-car1-name" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car1-cat">Category</label>
+                  <input type="text" id="fld-car1-cat" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+              <div class="form-field" style="margin-bottom: 0.4rem;">
+                <label for="fld-car1-img">Image URL (Google / Web Link)</label>
+                <input type="text" id="fld-car1-img" class="form-input" oninput="onFieldInput()">
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car1-price">Price/Day</label>
+                  <input type="text" id="fld-car1-price" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car1-060">0-60 MPH</label>
+                  <input type="text" id="fld-car1-060" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car1-top">Top Speed</label>
+                  <input type="text" id="fld-car1-top" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car1-hp">Horsepower</label>
+                  <input type="text" id="fld-car1-hp" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+            </div>
+
+            <!-- Car 2 Controls -->
+            <div class="form-field" style="border-bottom: 1px dashed var(--border); padding-bottom: 1rem;">
+              <h4 style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--brand-accent); margin-bottom: 0.5rem;">VEHICLE 02</h4>
+              <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                <div style="flex:2" class="form-field">
+                  <label for="fld-car2-name">Car Name</label>
+                  <input type="text" id="fld-car2-name" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car2-cat">Category</label>
+                  <input type="text" id="fld-car2-cat" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+              <div class="form-field" style="margin-bottom: 0.4rem;">
+                <label for="fld-car2-img">Image URL (Google / Web Link)</label>
+                <input type="text" id="fld-car2-img" class="form-input" oninput="onFieldInput()">
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car2-price">Price/Day</label>
+                  <input type="text" id="fld-car2-price" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car2-060">0-60 MPH</label>
+                  <input type="text" id="fld-car2-060" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car2-top">Top Speed</label>
+                  <input type="text" id="fld-car2-top" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car2-hp">Horsepower</label>
+                  <input type="text" id="fld-car2-hp" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+            </div>
+
+            <!-- Car 3 Controls -->
+            <div class="form-field">
+              <h4 style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--brand-accent); margin-bottom: 0.5rem;">VEHICLE 03</h4>
+              <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                <div style="flex:2" class="form-field">
+                  <label for="fld-car3-name">Car Name</label>
+                  <input type="text" id="fld-car3-name" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car3-cat">Category</label>
+                  <input type="text" id="fld-car3-cat" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+              <div class="form-field" style="margin-bottom: 0.4rem;">
+                <label for="fld-car3-img">Image URL (Google / Web Link)</label>
+                <input type="text" id="fld-car3-img" class="form-input" oninput="onFieldInput()">
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car3-price">Price/Day</label>
+                  <input type="text" id="fld-car3-price" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car3-060">0-60 MPH</label>
+                  <input type="text" id="fld-car3-060" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car3-top">Top Speed</label>
+                  <input type="text" id="fld-car3-top" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:1" class="form-field">
+                  <label for="fld-car3-hp">Horsepower</label>
+                  <input type="text" id="fld-car3-hp" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A4 Vector Section -->
+        <div class="vector-section" style="margin-top: 1rem;">
+          <div class="vector-section-header" onclick="toggleAccordion(this)">
+            <h3>a₄·A₄: User Interface System</h3>
+            <span class="vector-arrow">▶</span>
+          </div>
+          <div class="vector-section-body">
+            <div class="form-field">
+              <label for="fld-ui-font">Typography Style</label>
+              <select id="fld-ui-font" class="form-input" onchange="onUIFontInput(this.value)">
+                <option value="'Syne', sans-serif">Syne (Default Accent)</option>
+                <option value="'Inter', sans-serif">Inter (Modern Clean)</option>
+                <option value="'IBM Plex Mono', monospace">IBM Plex Mono (Cyber Retro)</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Neon Glow Strength</label>
+              <div class="slider-container">
+                <input type="range" id="fld-ui-glow" class="slider-input" min="0" max="40" step="1" oninput="onUIFieldInput('glow', this.value)">
+                <span class="slider-val" id="lbl-ui-glow">15px</span>
+              </div>
+            </div>
+            <div class="form-field">
+              <label>Glassmorphism Blur</label>
+              <div class="slider-container">
+                <input type="range" id="fld-ui-blur" class="slider-input" min="0" max="30" step="1" oninput="onUIFieldInput('blur', this.value)">
+                <span class="slider-val" id="lbl-ui-blur">12px</span>
+              </div>
+            </div>
+            <div class="form-field">
+              <label>Border Corner Radius</label>
+              <div class="slider-container">
+                <input type="range" id="fld-ui-radius" class="slider-input" min="0" max="28" step="2" oninput="onUIFieldInput('radius', this.value)">
+                <span class="slider-val" id="lbl-ui-radius">12px</span>
+              </div>
+            </div>
+            <div class="form-field" style="flex-direction: row; gap: 0.8rem; align-items: center; padding-top: 0.5rem;">
+              <input type="checkbox" id="fld-ui-grid" style="width:16px; height:16px; accent-color: var(--brand-accent);" onchange="onUIFieldInput('grid', this.checked)">
+              <label for="fld-ui-grid" style="cursor: pointer; user-select: none;">Show Dashboard Grid Lines</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- A5 Vector Section (NEW: Experiences Section) -->
+        <div class="vector-section" style="margin-top: 1rem;">
+          <div class="vector-section-header" onclick="toggleAccordion(this)">
+            <h3>a₅·A₅: Logistics &amp; Brand Experience</h3>
+            <span class="vector-arrow">▶</span>
+          </div>
+          <div class="vector-section-body">
+            <!-- Card 1 -->
+            <div class="form-field" style="border-bottom: 1px dashed var(--border); padding-bottom: 1rem;">
+              <h4 style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--brand-accent); margin-bottom: 0.5rem;">EXPERIENCE CARD 01</h4>
+              <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                <div style="flex:1" class="form-field">
+                  <label for="fld-exp1-ico">Icon</label>
+                  <input type="text" id="fld-exp1-ico" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:3" class="form-field">
+                  <label for="fld-exp1-title">Title</label>
+                  <input type="text" id="fld-exp1-title" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="fld-exp1-desc">Description</label>
+                <textarea id="fld-exp1-desc" class="form-input" rows="2" style="resize: vertical;" oninput="onFieldInput()"></textarea>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="form-field" style="border-bottom: 1px dashed var(--border); padding-bottom: 1rem;">
+              <h4 style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--brand-accent); margin-bottom: 0.5rem;">EXPERIENCE CARD 02</h4>
+              <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                <div style="flex:1" class="form-field">
+                  <label for="fld-exp2-ico">Icon</label>
+                  <input type="text" id="fld-exp2-ico" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:3" class="form-field">
+                  <label for="fld-exp2-title">Title</label>
+                  <input type="text" id="fld-exp2-title" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="fld-exp2-desc">Description</label>
+                <textarea id="fld-exp2-desc" class="form-input" rows="2" style="resize: vertical;" oninput="onFieldInput()"></textarea>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="form-field">
+              <h4 style="font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--brand-accent); margin-bottom: 0.5rem;">EXPERIENCE CARD 03</h4>
+              <div style="display: flex; gap: 0.4rem; margin-bottom: 0.4rem;">
+                <div style="flex:1" class="form-field">
+                  <label for="fld-exp3-ico">Icon</label>
+                  <input type="text" id="fld-exp3-ico" class="form-input" oninput="onFieldInput()">
+                </div>
+                <div style="flex:3" class="form-field">
+                  <label for="fld-exp3-title">Title</label>
+                  <input type="text" id="fld-exp3-title" class="form-input" oninput="onFieldInput()">
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="fld-exp3-desc">Description</label>
+                <textarea id="fld-exp3-desc" class="form-input" rows="2" style="resize: vertical;" oninput="onFieldInput()"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Live Serialization Panel -->
+      <div class="yaml-container">
+        <span class="yaml-title">Active Eigenstate Register Document (eigen_config.yaml)</span>
+        <pre><code id="code-block"></code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOOKING MODAL CHECKOUT -->
+  <div class="checkout-drawer" id="checkout-drawer">
+    <div class="checkout-header">
+      <div>
+        <h3 class="checkout-title" id="chk-car-name">Aether EV Hypercar</h3>
+        <p class="checkout-subtitle">Secure reservation invoice calculations</p>
+      </div>
+      <button class="btn-close-checkout" onclick="closeCheckout()">✕</button>
+    </div>
+    
+    <div class="checkout-grid">
+      <div class="checkout-details-panel">
+        <div class="checkout-detail-row">
+          <span class="lbl">Lease Location:</span>
+          <span class="val" id="chk-loc">Los Angeles Airport (LAX)</span>
+        </div>
+        <div class="checkout-detail-row">
+          <span class="lbl">Rent Duration:</span>
+          <span class="val" id="chk-days">3 Days</span>
+        </div>
+        <div class="checkout-detail-row">
+          <span class="lbl">Base Pricing:</span>
+          <span class="val" id="chk-base-rate">$750 / Day</span>
+        </div>
+        <div class="checkout-detail-row" style="border-top: 1px dashed var(--border); padding-top: 0.5rem; margin-top: 0.2rem;">
+          <span class="lbl">Telemetry WASM Fee:</span>
+          <span class="val">$45.00</span>
+        </div>
+        <div class="checkout-detail-row">
+          <span class="lbl">VAT & Local Taxes:</span>
+          <span class="val" id="chk-tax">$150.00</span>
+        </div>
+      </div>
+      
+      <div class="checkout-summary-panel">
+        <div>
+          <div class="checkout-total-label">Invoice Total</div>
+          <div class="checkout-total-price" id="chk-total">$2,445.00</div>
+        </div>
+        <button class="btn-confirm-booking" onclick="confirmBooking()">Confirm Reservation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Notification toast -->
+  <div class="notification" id="notification">
+    <span class="notification-icon">✓</span>
+    <span class="notification-text" id="notification-text">Reservation successfully registered!</span>
+  </div>
+
+  <!-- Script logic -->
+  <script type="module">
+    import init, {
+      init_app,
+      scroll_to_top,
+      toggle_drawer,
+      on_search,
+      open_checkout,
+      close_checkout,
+      confirm_booking,
+      load_preset,
+      on_field_input,
+      on_ui_field_input,
+      on_ui_font_input,
+      set_accent_color
+    } from './rust-wasm/pkg/car_rental_wasm.js';
+
+    async function run() {
+      // Initialize the WebAssembly module
+      await init();
+      
+      // Bind WASM exported functions to the window object so inline event handlers can find them
+      window.scrollToTop = scroll_to_top;
+      window.toggleDrawer = toggle_drawer;
+      window.onSearch = on_search;
+      window.openCheckout = open_checkout;
+      window.closeCheckout = close_checkout;
+      window.confirmBooking = confirm_booking;
+      window.loadPreset = load_preset;
+      window.onFieldInput = on_field_input;
+      window.onUIFieldInput = on_ui_field_input;
+      window.onUIFontInput = on_ui_font_input;
+      window.setAccentColor = set_accent_color;
+
+      // Initialize the application state and DOM values from Rust
+      init_app();
+    }
+
+    run();
+  </script>
+  <script>
+    // Presentational-only toggle for accordion headers (no app state logic)
+    function toggleAccordion(header) {
+      const body = header.nextElementSibling;
+      header.classList.toggle('active');
+      body.classList.toggle('active');
+    }
+  </script>
+</body>
+</html>
