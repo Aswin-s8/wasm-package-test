@@ -1256,6 +1256,7 @@
         <span class="exp-icon" id="exp-icon-3">🦾</span>
         <h3 class="exp-title" id="exp-title-3">WASM Telemetry</h3>
         <p class="exp-desc" id="exp-desc-3">Connect directly to real-time track telemetry via decentralized dashboard nodes, letting you analyze torque distribution and lap speeds live.</p>
+        <div id="wasm-buttons-container"></div>
       </div>
     </div>
   </section>
@@ -1673,6 +1674,8 @@
       set_accent_color
     } from './rust-wasm/pkg/car_rental_wasm.js';
 
+    import initUiWasm, { render_buttons } from './ui-wasm/pkg/ui_wasm.js';
+
     async function run() {
       // Initialize the WebAssembly module
       await init();
@@ -1692,6 +1695,14 @@
 
       // Initialize the application state and DOM values from Rust
       init_app();
+
+      // Initialize and render the WASM UI buttons
+      try {
+        await initUiWasm();
+        render_buttons('wasm-buttons-container');
+      } catch (error) {
+        console.error("Failed to initialize WASM UI buttons:", error);
+      }
     }
 
     run();

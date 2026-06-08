@@ -1,5 +1,6 @@
 # Rust target directory
 rust-wasm/target/
+ui-wasm/target/
 
 # IDE files
 .idea/
