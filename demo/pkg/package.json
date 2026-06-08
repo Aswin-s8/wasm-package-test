@@ -1,0 +1,15 @@
+{
+  "name": "ui_wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "ui_wasm_bg.wasm",
+    "ui_wasm.js",
+    "ui_wasm.d.ts"
+  ],
+  "main": "ui_wasm.js",
+  "types": "ui_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoltDrive · Standalone WASM UI Component Demo</title>
+  
+  <!-- Premium Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #060913;
+      --text: #f8fafc;
+      --text-mid: #94a3b8;
+      --border: rgba(255, 255, 255, 0.08);
+      --card-bg: rgba(15, 22, 42, 0.45);
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background-image: radial-gradient(circle at 50% 30%, rgba(34, 211, 238, 0.05) 0%, transparent 60%);
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--text-mid);
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+
+    /* Container where WASM will inject the buttons */
+    #wasm-ui-target {
+      min-height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: var(--text-mid);
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>WebAssembly UI Demo</h1>
+    <p class="subtitle">The interactive buttons below are rendered, styled, and managed entirely by compiling Rust code to WebAssembly.</p>
+    
+    <!-- This element is target for WASM buttons insertion -->
+    <div id="wasm-ui-target">
+      <span style="color: var(--text-mid); font-style: italic;">Loading WebAssembly Module...</span>
+    </div>
+  </div>
+
+  <footer>
+    VoltDrive Telemetry Systems · ui-wasm package integration
+  </footer>
+
+  <!-- Load and initialize the WASM module -->
+  <script type="module">
+    import init, { render_buttons } from './pkg/ui_wasm.js';
+
+    async function start() {
+      try {
+        // Initialize WASM binary
+        await init();
+        
+        // Render the component into our target container
+        render_buttons('wasm-ui-target');
+      } catch (error) {
+        console.error("Failed to load WebAssembly module:", error);
+        document.getElementById('wasm-ui-target').innerHTML = 
+          `<span style="color: #f43f5e;">Error loading WASM UI components.</span>`;
+      }
+    }
+
+    start();
+  </script>
+</body>
+</html>
