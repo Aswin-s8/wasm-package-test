@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust Compilation: Native & WebAssembly Targets</title>
+    <meta name="description" content="An interactive presentation introducing Rust compilation, target triples, native OS builds, and WebAssembly targets.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(247, 76, 0, 0.15);
+            
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+
+            --rust-orange: #f74c00;
+            --rust-orange-glow: rgba(247, 76, 0, 0.4);
+            --wasm-purple: #654ff0;
+            --wasm-purple-glow: rgba(101, 79, 240, 0.4);
+            
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-yellow: #f59e0b;
+
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+            
+            --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            --slide-transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(247, 76, 0, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(101, 79, 240, 0.06) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(17, 24, 39, 0.6) 0%, rgba(11, 15, 25, 1) 100%);
+            background-attachment: fixed;
+        }
+
+        /* Presentation Layout */
+        header {
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(11, 15, 25, 0.7);
+            backdrop-filter: blur(12px);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-badge {
+            background: linear-gradient(135deg, var(--rust-orange), var(--wasm-purple));
+            color: white;
+            font-weight: 800;
+            font-family: var(--font-display);
+            padding: 0.35rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 15px rgba(247, 76, 0, 0.2);
+        }
+
+        .presentation-title {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .controls-top {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .keyboard-hint {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .keyboard-hint kbd {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-primary);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Slide Container and Slides */
+        .slides-viewport {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .slides-container {
+            width: 100%;
+            height: 100%;
+            max-width: 1100px;
+            max-height: 680px;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.96) translateY(20px);
+            transition: var(--slide-transition);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1) translateY(0);
+            z-index: 2;
+        }
+
+        .slide.previous {
+            transform: scale(0.96) translateY(-20px);
+            opacity: 0;
+        }
+
+        /* Slide Content Styling */
+        .slide-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(16px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--rust-orange), var(--wasm-purple));
+            opacity: 0.8;
+        }
+
+        .slide-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .slide-tag {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--rust-orange);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        .slide-title {
+            font-family: var(--font-display);
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        .slide-body {
+            flex: 1;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            min-height: 0; /* allows content to scroll/flex properly */
+        }
+
+        .slide-content-full {
+            width: 100%;
+        }
+
+        .slide-content-left {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .slide-content-right {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Typography & Custom Elements */
+        p.lead {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        .highlight-text {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .bullet-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .bullet-list li {
+            position: relative;
+            padding-left: 2rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .bullet-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.5rem;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--rust-orange);
+            box-shadow: 0 0 8px var(--rust-orange-glow);
+        }
+
+        .bullet-list.wasm-style li::before {
+            background-color: var(--wasm-purple);
+            box-shadow: 0 0 8px var(--wasm-purple-glow);
+        }
+
+        /* Code Block Styling */
+        .code-container {
+            width: 100%;
+            background: rgba(10, 15, 26, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            position: relative;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+            overflow-x: auto;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: var(--font-body);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .code-header .dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .code-header .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .code-header .dot.red { background-color: #ef4444; }
+        .code-header .dot.yellow { background-color: #f59e0b; }
+        .code-header .dot.green { background-color: #10b981; }
+
+        .code-header .title {
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+        }
+
+        .code-container pre {
+            color: #d1d5db;
+        }
+
+        .code-container .kw { color: #f472b6; font-weight: 500; } /* keyword */
+        .code-container .func { color: #60a5fa; } /* function */
+        .code-container .type { color: #34d399; } /* type */
+        .code-container .str { color: #fbbf24; } /* string */
+        .code-container .comment { color: #6b7280; font-style: italic; }
+        .code-container .cmd { color: #a7f3d0; } /* command prefix */
+
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 0.8rem;
+            right: 1rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: var(--transition-smooth);
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+        }
+
+        /* Title Slide Customization */
+        .slide-title-card {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: radial-gradient(circle at center, rgba(17, 24, 39, 0.8) 0%, rgba(9, 11, 20, 0.95) 100%);
+        }
+
+        .slide-title-card .brand-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: 0;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .slide-title-card .brand-glow.rust {
+            background-color: var(--rust-orange);
+            top: 20%;
+            left: 25%;
+        }
+
+        .slide-title-card .brand-glow.wasm {
+            background-color: var(--wasm-purple);
+            bottom: 20%;
+            right: 25%;
+        }
+
+        .hero-title {
+            font-family: var(--font-display);
+            font-size: 3.8rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #ffffff, #d1d5db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            z-index: 1;
+        }
+
+        .hero-title span.rust-color {
+            background: linear-gradient(to right, #ff8c42, var(--rust-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-title span.wasm-color {
+            background: linear-gradient(to right, #9f8cff, var(--wasm-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.35rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin-bottom: 2.5rem;
+            font-weight: 300;
+            line-height: 1.6;
+            z-index: 1;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, var(--rust-orange), var(--wasm-purple));
+            color: white;
+            border: none;
+            padding: 0.9rem 2.2rem;
+            border-radius: 50px;
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.05rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 8px 25px rgba(247, 76, 0, 0.3);
+            transition: var(--transition-smooth);
+            z-index: 1;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(247, 76, 0, 0.45), 0 0 0 4px rgba(255,255,255,0.08);
+        }
+
+        .start-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Target Triple Breakdown (Slide 2) */
+        .triple-breakdown-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .triple-input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            justify-content: center;
+            gap: 0.25rem;
+            font-family: var(--font-mono);
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .triple-part {
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            position: relative;
+        }
+
+        .triple-part:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .triple-part.active {
+            background: rgba(247, 76, 0, 0.15);
+            color: var(--rust-orange);
+            box-shadow: 0 0 12px rgba(247, 76, 0, 0.1);
+        }
+
+        .triple-part.wasm-active {
+            background: rgba(101, 79, 240, 0.15);
+            color: #9f8cff;
+            box-shadow: 0 0 12px rgba(101, 79, 240, 0.1);
+        }
+
+        .triple-desc-box {
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid var(--rust-orange);
+            padding: 1rem 1.5rem;
+            border-radius: 0 12px 12px 0;
+            min-height: 90px;
+            transition: var(--transition-smooth);
+        }
+
+        .triple-desc-box.wasm-theme {
+            border-left-color: var(--wasm-purple);
+        }
+
+        .triple-desc-title {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+
+        .triple-desc-text {
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Target Cards Layout */
+        .target-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+            width: 100%;
+        }
+
+        .target-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: var(--transition-smooth);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .target-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .target-card.highlight:hover {
+            border-color: var(--rust-orange);
+            box-shadow: 0 10px 25px rgba(247, 76, 0, 0.15);
+        }
+
+        .target-card.highlight-wasm:hover {
+            border-color: var(--wasm-purple);
+            box-shadow: 0 10px 25px rgba(101, 79, 240, 0.15);
+        }
+
+        .target-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.15rem;
+        }
+
+        .target-card-header i {
+            color: var(--rust-orange);
+        }
+
+        .target-card.highlight-wasm .target-card-header i {
+            color: var(--wasm-purple);
+        }
+
+        .target-card-triple {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            background: rgba(0,0,0,0.2);
+            padding: 0.35rem 0.6rem;
+            border-radius: 6px;
+            color: var(--text-primary);
+            width: fit-content;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .target-card-body {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .target-card-footer {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--rust-orange);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-top: auto;
+        }
+
+        .target-card.highlight-wasm .target-card-footer {
+            color: var(--wasm-purple);
+        }
+
+        /* Comparison Table Styling */
+        .comparison-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.92rem;
+        }
+
+        .comparison-table th, 
+        .comparison-table td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            font-family: var(--font-display);
+            font-weight: 600;
+            background: rgba(255,255,255,0.02);
+            color: var(--text-primary);
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .comparison-table td.col-feature {
+            font-weight: 600;
+            color: var(--text-primary);
+            width: 20%;
+        }
+
+        .comparison-table td.col-native {
+            color: var(--text-secondary);
+            border-left: 1px solid var(--border-color);
+            width: 40%;
+        }
+
+        .comparison-table td.col-wasm {
+            color: var(--text-secondary);
+            border-left: 1px solid var(--border-color);
+            width: 40%;
+        }
+
+        .badge-native {
+            background: rgba(247, 76, 0, 0.1);
+            color: #ff8c42;
+            border: 1px solid rgba(247, 76, 0, 0.2);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+        }
+
+        .badge-wasm {
+            background: rgba(101, 79, 240, 0.1);
+            color: #9f8cff;
+            border: 1px solid rgba(101, 79, 240, 0.2);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Config Steps Tabs (Slide 5) */
+        .config-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .config-tab {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: var(--transition-smooth);
+        }
+
+        .config-tab.active {
+            background: rgba(247, 76, 0, 0.1);
+            border-color: var(--rust-orange);
+            color: var(--text-primary);
+        }
+
+        .config-tab.wasm-tab.active {
+            background: rgba(101, 79, 240, 0.1);
+            border-color: var(--wasm-purple);
+        }
+
+        .config-panel {
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .config-panel.active {
+            display: flex;
+        }
+
+        /* Interactive Pipeline Visualizer (Slide 6) */
+        .pipeline-wrapper {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .pipeline-toggle {
+            display: flex;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            padding: 4px;
+        }
+
+        .pipeline-toggle-btn {
+            background: transparent;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .pipeline-toggle-btn.active.native-mode {
+            background: var(--rust-orange);
+            color: white;
+            box-shadow: 0 4px 12px var(--rust-orange-glow);
+        }
+
+        .pipeline-toggle-btn.active.wasm-mode {
+            background: var(--wasm-purple);
+            color: white;
+            box-shadow: 0 4px 12px var(--wasm-purple-glow);
+        }
+
+        .pipeline-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 750px;
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        .pipeline-node {
+            background: rgba(17, 24, 39, 0.9);
+            border: 1px solid var(--border-color);
+            padding: 0.8rem 1.2rem;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 2;
+            transition: var(--transition-smooth);
+            min-width: 110px;
+        }
+
+        .pipeline-node.accent {
+            border-color: var(--rust-orange);
+            box-shadow: 0 0 15px rgba(247, 76, 0, 0.1);
+        }
+
+        .pipeline-node.accent.wasm-mode {
+            border-color: var(--wasm-purple);
+            box-shadow: 0 0 15px rgba(101, 79, 240, 0.1);
+        }
+
+        .pipeline-node-title {
+            font-family: var(--font-display);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+
+        .pipeline-node-meta {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .pipeline-arrow {
+            flex: 1;
+            height: 2px;
+            background: rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .pipeline-arrow::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 6px solid rgba(255,255,255,0.15);
+        }
+
+        .pipeline-arrow.active {
+            background: linear-gradient(90deg, var(--rust-orange), var(--wasm-purple));
+        }
+
+        .pipeline-arrow.active::after {
+            border-left-color: var(--wasm-purple);
+        }
+
+        .pipeline-dot-animation {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--rust-orange);
+            position: absolute;
+            top: -2px;
+            left: 0;
+            animation: flowForward 2s infinite linear;
+        }
+
+        .pipeline-dot-animation.wasm-mode {
+            background: var(--wasm-purple);
+        }
+
+        @keyframes flowForward {
+            0% { left: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        .pipeline-explanation {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            text-align: center;
+            max-width: 550px;
+            min-height: 48px;
+            line-height: 1.4;
+        }
+
+        /* Footer Controls */
+        footer {
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            border-top: 1px solid var(--border-color);
+            background: rgba(11, 15, 25, 0.7);
+            backdrop-filter: blur(12px);
+        }
+
+        .progress-dots {
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        .progress-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            border: 1px solid transparent;
+        }
+
+        .progress-dot:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .progress-dot.active {
+            background: var(--rust-orange);
+            box-shadow: 0 0 8px var(--rust-orange-glow);
+            transform: scale(1.2);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-dot.wasm-active {
+            background: var(--wasm-purple);
+            box-shadow: 0 0 8px var(--wasm-purple-glow);
+        }
+
+        .navigation-btns {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .nav-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .slide-counter {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Slide Transition Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Info boxes */
+        .info-box {
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.15);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            color: #93c5fd;
+            line-height: 1.4;
+        }
+
+        .info-box i {
+            color: var(--accent-blue);
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        /* Responsive adaptations */
+        @media (max-height: 750px) {
+            header, footer {
+                padding: 0.8rem 1.5rem;
+            }
+            .slide-card {
+                padding: 1.25rem 2rem;
+                justify-content: flex-start;
+                gap: 1rem;
+                overflow-y: auto;
+            }
+            /* Custom Scrollbar for slide cards when overflowing */
+            .slide-card::-webkit-scrollbar {
+                width: 6px;
+            }
+            .slide-card::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .slide-card::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+            }
+            .slide-card::-webkit-scrollbar-thumb:hover {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            .slide-title {
+                font-size: 1.7rem;
+            }
+            .hero-title {
+                font-size: 2.5rem;
+                margin-bottom: 0.75rem;
+            }
+            .hero-subtitle {
+                font-size: 1.05rem;
+                margin-bottom: 1.25rem;
+            }
+            .slide-header {
+                margin-bottom: 0.5rem;
+            }
+            .slide-body {
+                gap: 1rem;
+                align-items: stretch;
+            }
+            p.lead {
+                font-size: 0.95rem;
+                line-height: 1.4;
+            }
+            .bullet-list {
+                gap: 0.4rem;
+            }
+            .bullet-list li {
+                font-size: 0.88rem;
+                line-height: 1.4;
+            }
+            .target-grid {
+                gap: 0.75rem;
+            }
+            .target-card {
+                padding: 1rem;
+                gap: 0.5rem;
+            }
+            .target-card-header {
+                font-size: 1rem;
+            }
+            .target-card-body {
+                font-size: 0.82rem;
+            }
+            .info-box {
+                padding: 0.75rem;
+                font-size: 0.82rem;
+            }
+            .code-container {
+                padding: 0.75rem 1rem;
+                font-size: 0.8rem;
+            }
+            .pipeline-wrapper {
+                padding: 1rem;
+                gap: 1rem;
+            }
+            .pipeline-diagram {
+                margin: 0.5rem 0;
+            }
+            .comparison-table th, 
+            .comparison-table td {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.82rem;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .slides-viewport {
+                padding: 0.5rem;
+            }
+            .slide-card {
+                padding: 1rem 1.25rem;
+                border-radius: 16px;
+            }
+            .slide-title {
+                font-size: 1.4rem;
+            }
+            .hero-title {
+                font-size: 2rem;
+            }
+            .hero-subtitle {
+                font-size: 0.9rem;
+                margin-bottom: 1rem;
+            }
+            .start-btn {
+                padding: 0.6rem 1.4rem;
+                font-size: 0.9rem;
+            }
+            .triple-input {
+                font-size: 1.1rem;
+                padding: 0.6rem;
+            }
+            .triple-desc-box {
+                min-height: 70px;
+                padding: 0.6rem 0.8rem;
+            }
+            .pipeline-node {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.72rem;
+                min-width: 90px;
+            }
+            .pipeline-explanation {
+                font-size: 0.78rem;
+                min-height: 32px;
+            }
+        }
+
+        /* Screen Width/Orientation adaptations */
+        @media (max-width: 900px) {
+            .slide-body {
+                flex-direction: column;
+                align-items: stretch;
+                overflow-y: auto;
+            }
+            .slide-content-left, .slide-content-right {
+                flex: none;
+                width: 100%;
+            }
+            .target-grid {
+                grid-template-columns: 1fr;
+            }
+            .pipeline-diagram {
+                flex-direction: column;
+                gap: 1rem;
+                height: auto;
+            }
+            .pipeline-arrow {
+                width: 2px;
+                height: 20px;
+                flex: none;
+                margin: 0 auto;
+            }
+            .pipeline-arrow::after {
+                top: auto;
+                bottom: 0;
+                right: -4px;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 6px solid rgba(255,255,255,0.15);
+            }
+            .pipeline-dot-animation {
+                width: 6px;
+                height: 6px;
+                left: -2px;
+                top: 0;
+                animation: flowDown 2s infinite linear;
+            }
+        }
+
+        @keyframes flowDown {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="logo-area">
+            <div class="logo-badge">RUST COMPILATION</div>
+            <div class="presentation-title">Native & WebAssembly Targets</div>
+        </div>
+        <div class="controls-top">
+            <div class="keyboard-hint">
+                <span>Navigate:</span>
+                <kbd>←</kbd>
+                <kbd>→</kbd>
+                <kbd>Space</kbd>
+            </div>
+            <div class="slide-counter" id="slideCounter">Slide 1 of 7</div>
+        </div>
+    </header>
+
+    <!-- Slides Viewport -->
+    <div class="slides-viewport">
+        <div class="slides-container">
+
+            <!-- Slide 1: Welcome/Title -->
+            <div class="slide active" id="slide-1">
+                <div class="slide-card slide-title-card">
+                    <div class="brand-glow rust"></div>
+                    <div class="brand-glow wasm"></div>
+                    <span class="slide-tag">Workshop Presentation</span>
+                    <h1 class="hero-title">Demystifying Rust:<br>Compiling to <span class="rust-color">Native</span> & <span class="wasm-color">WebAssembly</span></h1>
+                    <p class="hero-subtitle">
+                        An interactive guide to Rust compilation architecture, host platforms, toolchains, and compiling high-performance modules for the modern web.
+                    </p>
+                    <button class="start-btn" onclick="nextSlide()">
+                        Start Presentation
+                        <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Slide 2: Compilation Model -->
+            <div class="slide" id="slide-2">
+                <div class="slide-card">
+                    <div class="slide-header">
+                        <span class="slide-tag">01. Core Architecture</span>
+                        <h2 class="slide-title">The Target-Oriented Compilation Model</h2>
+                    </div>
+                    <div class="slide-body">
+                        <div class="slide-content-left">
+                            <p class="lead">
+                                Rust is an <span class="highlight-text">Ahead-Of-Time (AOT)</span> compiled language. Instead of outputting bytecode for a VM (like Java or C#), the compiler (<code class="highlight-text" style="font-family: var(--font-mono); font-size: 0.95rem;">rustc</code>) uses <span class="highlight-text">LLVM</span> to generate highly optimized machine code specifically tailored to a target environment.
+                            </p>
+                            <div class="info-box">
+                                <i data-lucide="info"></i>
+                                <div>
+                                    <strong>Target Triples:</strong> Rust identifies target environments using standardized triples in the format: <br>
+                                    <span style="font-family: var(--font-mono); font-size: 0.85rem; color: white;">&lt;arch&gt;-&lt;vendor&gt;-&lt;sys&gt;-&lt;abi&gt;</span>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.92rem; color: var(--text-secondary);">
+                                Hover or click parts of the target triple on the right to dissect how Rust builds target specifications.
+                            </p>
+                        </div>
+                        <div class="slide-content-right">
+                            <div class="triple-breakdown-container" style="width: 100%;">
+                                <div class="triple-input" id="tripleInput">
+                                    <span class="triple-part active" data-part="arch" data-title="Architecture" data-desc="Specifies the CPU architecture, such as x86_64 (64-bit AMD/Intel), aarch64 (ARM64), or wasm32 (WebAssembly).">x86_64</span>-
+                                    <span class="triple-part" data-part="vendor" data-title="Vendor" data-desc="Defines the system vendor (e.g. pc, apple, unknown). Primarily historical but still required for LLVM matching.">pc</span>-
+                                    <span class="triple-part" data-part="sys" data-title="Operating System" data-desc="The operating system environment (e.g. windows, linux, darwin, or unknown for bare-metal/WebAssembly).">windows</span>-
+                                    <span class="triple-part" data-part="abi" data-title="ABI / Environment" data-desc="Application Binary Interface or C library link target, such as msvc (Microsoft VC++ runtime) or gnu (glibc).">msvc</span>
+                                </div>
+                                <div class="triple-desc-box" id="tripleDescBox">
+                                    <div class="triple-desc-title" id="tripleDescTitle">Architecture (x86_64)</div>
+                                    <div class="triple-desc-text" id="tripleDescText">Specifies the CPU architecture, such as x86_64 (64-bit AMD/Intel), aarch64 (ARM64), or wasm32 (WebAssembly).</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: Native Targets -->
+            <div class="slide" id="slide-3">
+                <div class="slide-card">
+                    <div class="slide-header">
+                        <span class="slide-tag" style="color: var(--rust-orange);">02. Native Builds</span>
+                        <h2 class="slide-title">Native Targets: Powering the OS</h2>
+                    </div>
+                    <div class="slide-body">
+                        <div class="slide-content-full" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <p class="lead" style="margin-bottom: 0.5rem;">
+                                Native compilation targets generate binaries that execute directly on the physical hardware under a specific host OS. This provides maximum speed, raw access to registers, and direct operating system features.
+                            </p>
+                            
+                            <div class="target-grid">
+                                <!-- Target 1 -->
+                                <div class="target-card highlight">
+                                    <div class="target-card-header">
+                                        <i data-lucide="monitor"></i>
+                                        <span>Windows (MSVC)</span>
+                                    </div>
+                                    <div class="target-card-triple">x86_64-pc-windows-msvc</div>
+                                    <div class="target-card-body">
+                                        Compiles 64-bit binaries for Microsoft Windows, linking against the Microsoft Visual C++ runtime and DLL dependencies.
+                                    </div>
+                                    <div class="target-card-footer">
+                                        <i data-lucide="cpu"></i> Standard desktop & enterprise apps
+                                    </div>
+                                </div>
+                                <!-- Target 2 -->
+                                <div class="target-card highlight">
+                                    <div class="target-card-header">
+                                        <i data-lucide="terminal"></i>
+                                        <span>Linux (GNU)</span>
+                                    </div>
+                                    <div class="target-card-triple">x86_64-unknown-linux-gnu</div>
+                                    <div class="target-card-body">
+                                        Compiles for Linux systems, dynamically linking the GNU C Library (glibc). Great for cloud containers and server environments.
+                                    </div>
+                                    <div class="target-card-footer">
+                                        <i data-lucide="server"></i> Cloud servers & Docker images
+                                    </div>
+                                </div>
+                                <!-- Target 3 -->
+                                <div class="target-card highlight">
+                                    <div class="target-card-header">
+                                        <i data-lucide="laptop"></i>
+                                        <span>macOS Darwin</span>
+                                    </div>
+                                    <div class="target-card-triple">aarch64-apple-darwin</div>
+                                    <div class="target-card-body">
+                                        Compiles native 64-bit binaries optimized for Apple Silicon (M1/M2/M3 chips) running macOS.
+                                    </div>
+                                    <div class="target-card-footer">
+                                        <i data-lucide="zap"></i> Apple hardware development
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="info-box" style="background: rgba(247, 76, 0, 0.03); border-color: rgba(247, 76, 0, 0.15); color: #ffbc99;">
+                                <i data-lucide="shield-alert" style="color: var(--rust-orange);"></i>
+                                <div>
+                                    <strong>When to Choose Native:</strong> Use native compilation when interacting directly with host OS APIs (like filesystem access, direct threading, system audio/graphics APIs), executing high-performance server processes, or building standalone CLI applications.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: WebAssembly -->
+            <div class="slide" id="slide-4">
+                <div class="slide-card">
+                    <div class="slide-header">
+                        <span class="slide-tag" style="color: var(--wasm-purple);">03. Web Assembly</span>
+                        <h2 class="slide-title">WebAssembly (Wasm): The Portable Target</h2>
+                    </div>
+                    <div class="slide-body">
+                        <div class="slide-content-left">
+                            <p class="lead">
+                                WebAssembly (Wasm) is a low-level, assembly-like bytecode format designed to run with near-native speed in browser sandboxes. It represents a paradigm shift for web performance.
+                            </p>
+                            <ul class="bullet-list wasm-style">
+                                <li><strong class="highlight-text">Target:</strong> <code style="font-family: var(--font-mono); color: #9f8cff; background: rgba(101, 79, 240, 0.1); padding: 0.15rem 0.4rem; border-radius: 4px;">wasm32-unknown-unknown</code></li>
+                                <li><strong class="highlight-text">Safe Sandbox:</strong> Runs inside the web browser's isolated JS environment. It cannot access native system files or network drivers directly.</li>
+                                <li><strong class="highlight-text">Integration:</strong> Interoperates seamlessly with JavaScript variables and DOM events via custom binding layers.</li>
+                            </ul>
+                            <div class="info-box" style="background: rgba(101, 79, 240, 0.03); border-color: rgba(101, 79, 240, 0.15); color: #c3b9ff; margin-top: 0.5rem;">
+                                <i data-lucide="cpu" style="color: var(--wasm-purple);"></i>
+                                <div>
+                                    <strong>When to Choose Wasm:</strong> Use Wasm for complex web applications (e.g. video editors, Figma-like tools, 3D games), running Rust libraries on the frontend, or implementing edge serverless logic.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slide-content-right">
+                            <div class="target-card highlight-wasm" style="width: 100%; height: auto;">
+                                <div class="target-card-header">
+                                    <i data-lucide="globe"></i>
+                                    <span>Target Wasm Blueprint</span>
+                                </div>
+                                <div class="target-card-triple" style="color: #9f8cff; background: rgba(101, 79, 240, 0.15);">wasm32-unknown-unknown</div>
+                                <div class="target-card-body" style="font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <div>
+                                        <strong style="color: var(--text-primary);">wasm32</strong><br>
+                                        32-bit linear address space WebAssembly architecture.
+                                    </div>
+                                    <div>
+                                        <strong style="color: var(--text-primary);">unknown-unknown</strong><br>
+                                        No specific vendor runtime, and no target operating system API assumptions (a pure virtual environment).
+                                    </div>
+                                </div>
+                                <div class="target-card-footer" style="color: var(--wasm-purple);">
+                                    <i data-lucide="external-link"></i> Runs in V8, SpiderMonkey, Wasmtime
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: Configuring Toolchains -->
+            <div class="slide" id="slide-5">
+                <div class="slide-card">
+                    <div class="slide-header">
+                        <span class="slide-tag">04. Build Setup</span>
+                        <h2 class="slide-title">Configuring Rust Toolchains & Commands</h2>
+                    </div>
+                    <div class="slide-body">
+                        <div class="slide-content-full" style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div class="config-tabs">
+                                <button class="config-tab active" onclick="switchConfigTab('native')">Native Compilation Tooling</button>
+                                <button class="config-tab wasm-tab" onclick="switchConfigTab('wasm')">WebAssembly Compilation Tooling</button>
+                            </div>
+
+                            <!-- Native Tooling Panel -->
+                            <div class="config-panel active" id="panel-native">
+                                <p style="font-size: 0.95rem; color: var(--text-secondary);">
+                                    Native targets require the host OS to supply a compatible linker (like MSVC Linker on Windows or GCC/Clang on Unix/macOS).
+                                </p>
+                                <div class="code-container">
+                                    <div class="code-header">
+                                        <div class="dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                                        <div class="title">Terminal - Setup Native Target</div>
+                                    </div>
+                                    <button class="copy-btn" onclick="copyCode(this, 'rustup target add x86_64-pc-windows-msvc\ncargo build --target x86_64-pc-windows-msvc')">
+                                        <i data-lucide="copy" style="width: 12px; height: 12px;"></i> Copy
+                                    </button>
+                                    <pre><code><span class="comment"># 1. Check currently installed toolchains and targets</span>
+<span class="cmd">$</span> rustup target list
+
+<span class="comment"># 2. Add the native target if compiling for a different OS architecture</span>
+<span class="cmd">$</span> rustup target add x86_64-pc-windows-msvc
+
+<span class="comment"># 3. Compile your project using Cargo pointing to target</span>
+<span class="cmd">$</span> cargo build --target x86_64-pc-windows-msvc --release
+
+<span class="comment"># 4. Find executable in: target/x86_64-pc-windows-msvc/release/app.exe</span></code></pre>
+                                </div>
+                            </div>
+
+                            <!-- Wasm Tooling Panel -->
+                            <div class="config-panel" id="panel-wasm">
+                                <p style="font-size: 0.95rem; color: var(--text-secondary);">
+                                    Wasm requires no system SDK/linker. To integrate with browsers conveniently, we use <code style="color: var(--wasm-purple); font-family: var(--font-mono);">wasm-pack</code> to automatically output JavaScript bindings.
+                                </p>
+                                <div class="code-container">
+                                    <div class="code-header">
+                                        <div class="dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                                        <div class="title">Terminal - Setup WebAssembly</div>
+                                    </div>
+                                    <button class="copy-btn" onclick="copyCode(this, 'rustup target add wasm32-unknown-unknown\ncargo build --target wasm32-unknown-unknown\nwasm-pack build --target web')">
+                                        <i data-lucide="copy" style="width: 12px; height: 12px;"></i> Copy
+                                    </button>
+                                    <pre><code><span class="comment"># 1. Download and register the WebAssembly compiler target triple</span>
+<span class="cmd">$</span> rustup target add wasm32-unknown-unknown
+
+<span class="comment"># 2. Compile directly to Wasm (produces raw target/wasm32-unknown-unknown/debug/lib.wasm)</span>
+<span class="cmd">$</span> cargo build --target wasm32-unknown-unknown
+
+<span class="comment"># 3. [Recommended] Build with wasm-pack to package automatically for web apps</span>
+<span class="cmd">$</span> wasm-pack build --target web
+
+<span class="comment"># 4. Result: A /pkg directory containing .wasm and auto-generated JS bindings (.js)</span></code></pre>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: Interactive Compilation Flow -->
+            <div class="slide" id="slide-6">
+                <div class="slide-card">
+                    <div class="slide-header">
+                        <span class="slide-tag">05. Process Visualization</span>
+                        <h2 class="slide-title">Interactive Compilation Pipelines</h2>
+                    </div>
+                    <div class="slide-body">
+                        <div class="slide-content-full">
+                            <div class="pipeline-wrapper">
+                                <div class="pipeline-toggle">
+                                    <button class="pipeline-toggle-btn active native-mode" onclick="togglePipeline('native')">Native Pipeline</button>
+                                    <button class="pipeline-toggle-btn wasm-mode" onclick="togglePipeline('wasm')">WebAssembly Pipeline</button>
+                                </div>
+
+                                <div class="pipeline-diagram">
+                                    <div class="pipeline-node">
+                                        <div class="pipeline-node-title">Code</div>
+                                        <div class="pipeline-node-meta">src/main.rs</div>
+                                    </div>
+                                    <div class="pipeline-arrow active">
+                                        <div class="pipeline-dot-animation" id="pipeline-dot"></div>
+                                    </div>
+                                    <div class="pipeline-node accent" id="compiler-node">
+                                        <div class="pipeline-node-title">rustc / LLVM</div>
+                                        <div class="pipeline-node-meta">x86_64 CodeGen</div>
+                                    </div>
+                                    <div class="pipeline-arrow active"></div>
+                                    <div class="pipeline-node" id="linker-node">
+                                        <div class="pipeline-node-title">System Linker</div>
+                                        <div class="pipeline-node-meta">link.exe / gcc</div>
+                                    </div>
+                                    <div class="pipeline-arrow active"></div>
+                                    <div class="pipeline-node accent" id="output-node">
+                                        <div class="pipeline-node-title">Binary Output</div>
+                                        <div class="pipeline-node-meta">app.exe (Native)</div>
+                                    </div>
+                                </div>
+
+                                <div class="pipeline-explanation" id="pipeline-exp">
+                                    Compiles Rust code directly to target CPU instructions. The compiler links against the local OS system library (MSVC runtime, glibc, or Apple SDK) to generate an executable binary file (.exe or ELF).
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: Summary & Comparison -->
+            <div class="slide" id="slide-7">
+                <div class="slide-card">
+                    <div class="slide-header">
+                        <span class="slide-tag">06. Summary</span>
+                        <h2 class="slide-title">Native vs. WebAssembly Comparison</h2>
+                    </div>
+                    <div class="slide-body">
+                        <div class="slide-content-full" style="display: flex; flex-direction: column; gap: 1rem;">
+                            
+                            <div class="comparison-table-wrapper">
+                                <table class="comparison-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Feature</th>
+                                            <th>Native Compilation</th>
+                                            <th>WebAssembly Compilation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="col-feature">Target Triple</td>
+                                            <td class="col-native"><span class="badge-native">x86_64-pc-windows-msvc</span>, etc.</td>
+                                            <td class="col-wasm"><span class="badge-wasm">wasm32-unknown-unknown</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="col-feature">Sandbox & Security</td>
+                                            <td class="col-native">No Sandbox: Full OS/user authorization access.</td>
+                                            <td class="col-wasm">Sandboxed: Isolated memory space, safe in-browser execution.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="col-feature">OS & hardware access</td>
+                                            <td class="col-native">Direct (Filesystem, networking, device drivers).</td>
+                                            <td class="col-wasm">Indirect (Must bridge through JS/Web API imports).</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="col-feature">Primary Outputs</td>
+                                            <td class="col-native">Executables (`.exe`, ELF binaries) or DLLs (`.dll`, `.so`).</td>
+                                            <td class="col-wasm">Bytecode binary modules (`.wasm`) & JS wrapper files.</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="col-feature">Key Compilation Steps</td>
+                                            <td class="col-native">
+                                                1. Install OS linker tools (e.g., Build Tools for Visual Studio)<br>
+                                                2. Build: <code style="font-family: var(--font-mono); font-size: 0.8rem;">cargo build</code> (uses system host target)
+                                            </td>
+                                            <td class="col-wasm">
+                                                1. Add Wasm target: <code style="font-family: var(--font-mono); font-size: 0.8rem;">rustup target add ...</code><br>
+                                                2. Build: <code style="font-family: var(--font-mono); font-size: 0.8rem;">wasm-pack build --target web</code>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p style="font-size: 0.9rem; text-align: center; color: var(--text-muted); font-style: italic; margin-top: 0.5rem;">
+                                Press <kbd style="font-family: var(--font-mono); background: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 4px;">←</kbd> to review earlier slides, or double click anywhere to restart the presentation.
+                            </p>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer Progress and Nav -->
+    <footer>
+        <div class="navigation-btns">
+            <button class="nav-btn disabled" id="prevBtn" onclick="prevSlide()" aria-label="Previous Slide">
+                <i data-lucide="chevron-left"></i>
+            </button>
+            <button class="nav-btn" id="nextBtn" onclick="nextSlide()" aria-label="Next Slide">
+                <i data-lucide="chevron-right"></i>
+            </button>
+        </div>
+        <div class="progress-dots" id="progressDots">
+            <!-- Dynamically populated -->
+        </div>
+        <div style="width: 88px;"></div> <!-- visual spacer balancing buttons -->
+    </footer>
+
+    <!-- Interactive Logic scripts -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Slide State
+        let currentSlideIndex = 1;
+        const totalSlides = 7;
+
+        // Slide references
+        const slides = [];
+        for (let i = 1; i <= totalSlides; i++) {
+            slides.push(document.getElementById(`slide-${i}`));
+        }
+
+        // Initialize progress dots
+        const progressDotsContainer = document.getElementById('progressDots');
+        for (let i = 1; i <= totalSlides; i++) {
+            const dot = document.createElement('div');
+            dot.classList.add('progress-dot');
+            if (i === 1) dot.classList.add('active');
+            dot.addEventListener('click', () => goToSlide(i));
+            progressDotsContainer.appendChild(dot);
+        }
+        const dots = document.querySelectorAll('.progress-dot');
+
+        function updateSlideUI() {
+            // Update slides classes
+            slides.forEach((slide, idx) => {
+                const slideNum = idx + 1;
+                slide.classList.remove('active', 'previous');
+                if (slideNum === currentSlideIndex) {
+                    slide.classList.add('active');
+                } else if (slideNum < currentSlideIndex) {
+                    slide.classList.add('previous');
+                }
+            });
+
+            // Update Counter
+            document.getElementById('slideCounter').textContent = `Slide ${currentSlideIndex} of ${totalSlides}`;
+
+            // Update footer buttons
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            if (currentSlideIndex === 1) {
+                prevBtn.classList.add('disabled');
+            } else {
+                prevBtn.classList.remove('disabled');
+            }
+
+            if (currentSlideIndex === totalSlides) {
+                nextBtn.classList.add('disabled');
+            } else {
+                nextBtn.classList.remove('disabled');
+            }
+
+            // Update progress dots accent based on current page context (Rust color vs Wasm color)
+            dots.forEach((dot, idx) => {
+                const dotNum = idx + 1;
+                dot.classList.remove('active', 'wasm-active');
+                if (dotNum === currentSlideIndex) {
+                    if (currentSlideIndex === 4 || currentSlideIndex === 5) {
+                        dot.classList.add('wasm-active');
+                    } else {
+                        dot.classList.add('active');
+                    }
+                }
+            });
+        }
+
+        function nextSlide() {
+            if (currentSlideIndex < totalSlides) {
+                currentSlideIndex++;
+                updateSlideUI();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlideIndex > 1) {
+                currentSlideIndex--;
+                updateSlideUI();
+            }
+        }
+
+        function goToSlide(index) {
+            if (index >= 1 && index <= totalSlides) {
+                currentSlideIndex = index;
+                updateSlideUI();
+            }
+        }
+
+        // Keyboard Controls
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                e.preventDefault();
+                prevSlide();
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                goToSlide(1);
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                goToSlide(totalSlides);
+            }
+        });
+
+        // Double click anywhere to reset to slide 1
+        window.addEventListener('dblclick', (e) => {
+            // Avoid resetting when clicking buttons or interactive elements
+            if (e.target.tagName !== 'BUTTON' && !e.target.closest('.config-tab') && !e.target.closest('.triple-part') && !e.target.closest('.copy-btn')) {
+                goToSlide(1);
+            }
+        });
+
+        // Slide 2: Target Triple Breakdown Hover/Click Logic
+        const tripleParts = document.querySelectorAll('.triple-part');
+        const tripleDescTitle = document.getElementById('tripleDescTitle');
+        const tripleDescText = document.getElementById('tripleDescText');
+        const tripleDescBox = document.getElementById('tripleDescBox');
+
+        tripleParts.forEach(part => {
+            const updateDescription = () => {
+                // Clear previous active states
+                tripleParts.forEach(p => p.classList.remove('active', 'wasm-active'));
+                
+                const isWasm = part.textContent.includes('wasm');
+                
+                if (isWasm) {
+                    part.classList.add('wasm-active');
+                    tripleDescBox.classList.add('wasm-theme');
+                } else {
+                    part.classList.add('active');
+                    tripleDescBox.classList.remove('wasm-theme');
+                }
+                
+                tripleDescTitle.textContent = `${part.dataset.title} (${part.textContent})`;
+                tripleDescText.textContent = part.dataset.desc;
+            };
+
+            part.addEventListener('mouseenter', updateDescription);
+            part.addEventListener('click', updateDescription);
+        });
+
+        // Slide 5: Tooling Configuration Tabs
+        function switchConfigTab(type) {
+            const tabs = document.querySelectorAll('.config-tab');
+            const panels = document.querySelectorAll('.config-panel');
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.classList.remove('active'));
+
+            if (type === 'native') {
+                tabs[0].classList.add('active');
+                document.getElementById('panel-native').classList.add('active');
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('panel-wasm').classList.add('active');
+            }
+        }
+
+        // Slide 6: Interactive Pipeline Toggle
+        function togglePipeline(mode) {
+            const btns = document.querySelectorAll('.pipeline-toggle-btn');
+            const compilerNode = document.getElementById('compiler-node');
+            const linkerNode = document.getElementById('linker-node');
+            const outputNode = document.getElementById('output-node');
+            const pipelineDot = document.getElementById('pipeline-dot');
+            const pipelineExp = document.getElementById('pipeline-exp');
+
+            btns.forEach(b => b.classList.remove('active'));
+
+            if (mode === 'native') {
+                btns[0].classList.add('active');
+                
+                compilerNode.className = "pipeline-node accent";
+                compilerNode.querySelector('.pipeline-node-meta').textContent = "x86_64 CodeGen";
+                
+                linkerNode.style.opacity = "1";
+                linkerNode.style.pointerEvents = "auto";
+                linkerNode.querySelector('.pipeline-node-title').textContent = "System Linker";
+                linkerNode.querySelector('.pipeline-node-meta').textContent = "link.exe / gcc";
+                
+                outputNode.className = "pipeline-node accent";
+                outputNode.querySelector('.pipeline-node-title').textContent = "Binary Output";
+                outputNode.querySelector('.pipeline-node-meta').textContent = "app.exe (Native)";
+                
+                pipelineDot.className = "pipeline-dot-animation";
+                pipelineExp.textContent = "Compiles Rust code directly to target CPU instructions. The compiler links against the local OS system library (MSVC runtime, glibc, or Apple SDK) to generate an executable binary file (.exe or ELF).";
+            } else {
+                btns[1].classList.add('active');
+                
+                compilerNode.className = "pipeline-node accent wasm-mode";
+                compilerNode.querySelector('.pipeline-node-meta').textContent = "wasm32 CodeGen";
+                
+                linkerNode.style.opacity = "0.25";
+                linkerNode.style.pointerEvents = "none";
+                linkerNode.querySelector('.pipeline-node-title').textContent = "No Linker";
+                linkerNode.querySelector('.pipeline-node-meta').textContent = "(Direct Compile)";
+                
+                outputNode.className = "pipeline-node accent wasm-mode";
+                outputNode.querySelector('.pipeline-node-title').textContent = "Wasm Output";
+                outputNode.querySelector('.pipeline-node-meta').textContent = "module.wasm (Web)";
+                
+                pipelineDot.className = "pipeline-dot-animation wasm-mode";
+                pipelineExp.textContent = "Compiles Rust code into universal WebAssembly bytecodes. Since Wasm targets do not assume a host operating system, they skip the native system linker stage entirely, yielding a standalone .wasm module.";
+            }
+        }
+
+        // Copy Code Helper
+        async function copyCode(button, text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i data-lucide="check" style="width: 12px; height: 12px; color: #10b981;"></i> Copied!';
+                button.style.borderColor = '#10b981';
+                lucide.createIcons();
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    lucide.createIcons();
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+            }
+        }
+    </script>
+</body>
+</html>
